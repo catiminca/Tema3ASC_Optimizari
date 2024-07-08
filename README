@@ -1,0 +1,62 @@
+Minca Ecaterina-Ioana 334CAb
+
+Am avut de implementat formula C=(At×B+B×A)×Bt in 3 moduri: neoptim, optim si folosind BLAS.
+
+Implementarea neoptima:
+Prima oara am calculat transpusele pentru A si B, iar apoi am efectuat operatiile de
+inmultire conform formulei. Am tinut cont de faptul ca A este superior triunghiulara prin
+faptul ca nu am parcurs pana la final iteratie, deoarece acele calcule ar fi fost realizate
+degeaba, valorile din A sunt 0 acolo(sub diagonala principala).
+
+Implementarea optima:
+Am declarat toate variabile folosite in interiorul buclelor de iteratie la inceput si o singura data
+ca fiind register,folosind o utilizare optima a acestor resurse. De asemenea, inmultirile matricilor au
+fost realizate folosind metoda din laborator 9, cea cu pointeri si calculand urmatoarea adresa
+de mana a vectorului. Se va incrementa indexul de linii, iar cel de coloana este calculat adunand
+N pointerului. La fel ca la implementarea neoptima, am folosit faptul ca A este superior triunghiulara
+prin a nu parcurge pana la final iteratia.
+
+Implementarea BLAS:
+M-am folosit de alte 2 matrici auxiliare pentru aceasta implementare, iar in ambele la inceput folosind
+cblas_dcopy am copiat matricea B in ele. Am facut acest lucru pentru a putea realiza imnultirile de AtxB
+si BxA, deoarece functia cblas_dtrmm stocheaza rezultatul in a doua matrice. Aceasta functie este folosita
+pentru a realiza inmultirea dintre matricea triunghiulara si matricea normala. Adunarea celor 2 matrici
+este realizata cu ajutorul functiei cblas_daxpy. Inmultirea finala am facut-o cu ajutorul functiei
+cblas_dgemm.
+
+Analiza grafice:
+Am ales sa testez pe langa valorile date pentru N de 400, 800 si 1200, am mai testat pe 200 si 1520.
+Le-am ales astfel incat sa am una mai mica si una mai mare pentru a avea o plaja de testare mai mare.
+Se poate observa pe graficul cu toate 3, o diferenta clara de timp, cel neoptimizat pare in raport cu 
+celelalte ca are o crestere exponentiala cu cat N creste. Am realizat si 3 grafice separate pentru
+fiecare dintre cei 3 algoritmi. De asemenea, se poate observa ca intre 1200 si 1520, timpul se dubleaza
+la toate cele 3 implementari. BLAS asa cum ne asteptam este incomparabil mai rapid. Se poate observa
+o mare difenta si intre cel neoptimizat si cel optimizat.
+De exemplu pe testul cu N = 200 am obtinut:
+- Neoptimizat: 0.080151
+- Optimizat: 0.021576
+- BLAS: 0.003985
+Iar pe cel cu N = 1520:
+- Neoptimizat: 40.156143
+- Optimizat: 9.912003
+- BLAS: 1.166153
+Se poate observa cat de raapid este BLAS in comparatie cu celelalte 2 implementari, dar de asemenea si
+cat de mult a ajutat optimizarea programului fata de cel neoptimizat.
+
+Valgrind:
+Se poate observa la rularea valgrind pentru memorie ca pentru programul neoptimizat si cel optimizat
+am acelari numar de alocari(12), iar la cel in BLAS sunt 79 de alocari.
+
+La rularea valgrind folosind cachegrind se pot observa:
+- I refs optimizat: 1,803,440,838 vs neoptimizat 5,936,469,106 si BLAS 248,792,705 cu I1 misses la fel
+la cel neoptimizat si optimizat adica 1,650 vs 1,666, iar in BLAS 18,169.
+- D refs(care are output-ul impartit in read si write): BLAS 94,822,739 (87,638,024 rd  + 7,184,715 wr)
+vs neoptimizat 2,970,029,054 (2,836,964,138 rd  + 133,064,916 wr) vs optimizat 
+466,027,897 (461,604,166 rd  + 4,423,731 wr). Se poate observa ca exista o diferenta foarte mare intre cel
+optimizat si neoptimizat, ceea ce sugereaza ca folosirea implementarii cu pointeri a inmultirilor cat si
+folosirea de variabile register a ajutat foarte mult la optimizarea programului. Se observa ca s-au redus
+atat numarul de citiri si scrieri, cat si numarul de instructiuni.
+-Branches(care se imparte in conditionale si indirecte):
+    BLAS: 5,880,276 (5,625,954 cond + 254,322 ind) cu mispredict rate de 1.2% ( 1.2%  + 0.4% )
+    Neoptimizat: 133,494,814  (133,254,133 cond + 240,681 ind) cu mispredict rate de 0.4% (0.4% + 0.1%)
+    Optimizat: 133,816,531  (133,575,833 cond +   240,698 ind) cu mispredict rate de 0.4% (0.4% + 0.1%)
